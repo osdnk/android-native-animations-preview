@@ -1,12 +1,17 @@
 package osdnk.previewanimations;
 
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.animation.DynamicAnimation;
+import android.support.animation.FlingAnimation;
+import android.support.animation.FloatValueHolder;
 import android.support.animation.SpringAnimation;
+import android.support.animation.SpringForce;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.NavUtils;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -16,6 +21,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.squareup.duktape.Duktape;
+
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -27,18 +36,41 @@ public class MainActivity extends AppCompatActivity
     setContentView(R.layout.activity_main);
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
+    final Duktape duktape = Duktape.create();
+    final Locale locale = new Locale("en");
 
-    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+
+    FloatingActionButton fab = findViewById(R.id.fab);
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+        Snackbar.make(view, "Spring started", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
         final View img = findViewById(R.id.sample);
-// Setting up a spring animation to animate the view’s translationY property with the final
-// spring position at 0.
-        final SpringAnimation springAnim = new SpringAnimation(img, DynamicAnimation.TRANSLATION_Y, 300);
-        springAnim.start();
+
+        FloatValueHolder floatValueHolder = new FloatValueHolder(20f);
+        SpringForce spring = new SpringForce(1000)
+                .setDampingRatio(SpringForce.DAMPING_RATIO_HIGH_BOUNCY)
+                .setStiffness(SpringForce.STIFFNESS_VERY_LOW);
+
+        SpringAnimation anim = new SpringAnimation(floatValueHolder)
+                .setSpring(spring);
+
+
+        anim.addUpdateListener(new DynamicAnimation.OnAnimationUpdateListener() {
+          @Override
+          public void onAnimationUpdate(DynamicAnimation animation, float value, float velocity) {
+
+            String express = String.format(locale, "%f/2" ,value);
+            Double y = (Double) duktape.evaluate(express);
+            String express2 = String.format(locale, "%f/3" ,value);
+            Double x = (Double) duktape.evaluate(express2);
+
+            img.setTranslationY(y.floatValue());
+            img.setTranslationX(x.floatValue());
+          }
+        });
+        anim.start();
       }
     });
 
